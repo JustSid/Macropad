@@ -8,6 +8,7 @@
 #include <cstdint>
 #include <vector>
 #include <config.h>
+#include <tiny-json.h>
 
 enum class action_t
 {
@@ -50,8 +51,8 @@ struct keymacro_t
 
 struct keylayer_t
 {
-	keymacro_t macros[num_key_rows][num_key_cols] = {};
-	keymacro_t mod_macros[num_key_rows][num_key_cols] = {};
+	keymacro_t macros[num_key_rows * num_key_cols] = {};
+	keymacro_t mod_macros[num_key_rows * num_key_cols] = {};
 };
 
 struct keymap_t
@@ -61,8 +62,8 @@ struct keymap_t
 	uint8_t active_page;
 };
 
-extern keymap_t *build_blender_keymap();
-extern keymap_t *build_fusion_keymap();
 extern keymap_t *build_system_keymap();
+
+extern keymap_t *parse_keymap(const json_t *keymap);
 
 #endif //KEYLAYER_H

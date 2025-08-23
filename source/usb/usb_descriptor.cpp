@@ -63,11 +63,16 @@ const uint8_t *tud_hid_descriptor_report_cb(uint8_t instance)
 enum
 {
 	ITF_NUM_HID,
+	ITF_NUM_MSC,
 	ITF_NUM_TOTAL
 };
 
-#define CONFIG_TOTAL_LEN (TUD_CONFIG_DESC_LEN + TUD_HID_DESC_LEN)
-#define EPNUM_HID   0x81
+#define CONFIG_TOTAL_LEN (TUD_CONFIG_DESC_LEN + TUD_HID_DESC_LEN + TUD_MSC_DESC_LEN)
+
+#define EPNUM_HID   0x82
+
+#define EPNUM_MSC_OUT     0x01
+#define EPNUM_MSC_IN      0x81
 
 const uint8_t desc_configuration[] =
 {
@@ -75,7 +80,10 @@ const uint8_t desc_configuration[] =
 	TUD_CONFIG_DESCRIPTOR(1, ITF_NUM_TOTAL, 0, CONFIG_TOTAL_LEN, TUSB_DESC_CONFIG_ATT_REMOTE_WAKEUP, 100),
 
 	// Interface number, string index, protocol, report descriptor len, EP In address, size & polling interval
-	TUD_HID_DESCRIPTOR(ITF_NUM_HID, 0, HID_ITF_PROTOCOL_NONE, sizeof(desc_hid_report), EPNUM_HID, CFG_TUD_HID_EP_BUFSIZE, 5)
+	TUD_HID_DESCRIPTOR(ITF_NUM_HID, 0, HID_ITF_PROTOCOL_NONE, sizeof(desc_hid_report), EPNUM_HID, CFG_TUD_HID_EP_BUFSIZE, 5),
+
+	// Interface number, string index, EP Out & EP In address, EP size
+	TUD_MSC_DESCRIPTOR(ITF_NUM_MSC, 0, EPNUM_MSC_OUT, EPNUM_MSC_IN, 64),
 };
 
 const uint8_t *tud_descriptor_configuration_cb(uint8_t index)

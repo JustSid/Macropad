@@ -23,8 +23,10 @@ public:
 	void update();
 
 	void usb_state_changed();
+	void load_configuration();
 
 private:
+	void parse_configuration();
 	void set_display_on(bool display_on);
 
 	void draw_active_keymap();
@@ -59,6 +61,8 @@ private:
 
 	std::vector<keymap_t *> m_keymaps;
 	size_t m_current_keymap = 0;
+
+	char *m_config_data = nullptr;
 };
 
 #endif //MACROPAD_APPLICATION_H

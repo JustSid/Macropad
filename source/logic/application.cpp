@@ -7,10 +7,10 @@
 #include <gui/drawing.h>
 #include <usb/usb_descriptor.h>
 #include <pico/bootrom.h>
-
+#include <ff.h>
+#include <tiny-json.h>
 #include "application.h"
 
-#include <bsp/board_api.h>
 
 void application::init()
 {
@@ -33,13 +33,92 @@ void application::init()
 	m_previous_analog_x = m_analogstick.get_x_value(display_width);
 	m_previous_analog_y = m_analogstick.get_y_value(display_height);
 
-	m_keymaps.push_back(build_blender_keymap());
-	m_keymaps.push_back(build_fusion_keymap());
-	m_keymaps.push_back(build_system_keymap());
+	load_configuration();
 
 	m_last_input = to_ms_since_boot(get_absolute_time());
 	m_needs_redraw = true;
 }
+
+void application::load_configuration()
+{
+	for(auto &key : m_keymaps)
+		delete key;
+
+	m_keymaps.clear();
+
+	parse_configuration();
+
+	m_keymaps.push_back(build_system_keymap());
+	m_current_keymap = 0;
+
+	m_needs_redraw = true;
+}
+
+void application::parse_configuration()
+{
+	if(m_config_data)
+	{
+		delete[] m_config_data;
+		m_config_data = nullptr;
+	}
+
+	FIL file;
+
+	FILINFO info;
+	if(f_stat("/config.json", &info) != FR_OK)
+		return;
+
+	if(f_open(&file, "/config.json", FA_OPEN_EXISTING | FA_READ) == FR_OK)
+	{
+		m_config_data = new char[info.fsize];
+		if(!m_config_data)
+			return;
+
+		size_t pool_size = 512;
+		constexpr size_t max_pool_size = (100 * 1024) / sizeof(json_t); // Max 100kb of RAM
+
+		while(pool_size < max_pool_size)
+		{
+			json_t *pool = new json_t[pool_size];
+			if(!pool)
+				break;
+
+			UINT read;
+			if(f_read(&file, m_config_data, info.fsize, &read) != FR_OK)
+			{
+				delete[] pool;
+				break;
+			}
+
+			const json_t *parent = json_create(m_config_data, pool, pool_size);
+			if(!parent)
+			{
+				delete[] pool;
+				pool_size = pool_size + 512;
+			}
+
+			if(json_getType(parent) != JSON_ARRAY)
+			{
+				delete[] pool;
+				break;
+			}
+
+			for(const json_t *keymap = json_getChild(parent); keymap; keymap = json_getSibling(keymap))
+			{
+				keymap_t *result = parse_keymap(keymap);
+				if(!result)
+					continue;
+
+				m_keymaps.push_back(result);
+			}
+
+			delete[] pool;
+			break;
+		}
+	}
+}
+
+
 void application::update()
 {
 	m_keymatrix.update();
@@ -192,7 +271,7 @@ void application::process_input()
 	{
 		for(uint32_t j = 0; j < num_key_cols; j ++)
 		{
-			const keymacro_t &macro = layer.macros[i][j];
+			const keymacro_t &macro = layer.macros[i * num_key_cols + j];
 
 			if(macro.type == keymacro_t::type_t::mod)
 			{
@@ -215,7 +294,7 @@ void application::process_input()
 		{
 			if(m_keymatrix.get_state(i, j))
 			{
-				const keymacro_t &macro = m_is_mod ? layer.mod_macros[i][j] : layer.macros[i][j];
+				const keymacro_t &macro = m_is_mod ? layer.mod_macros[i * num_key_cols + j] : layer.macros[i * num_key_cols + j];
 
 				switch(macro.type)
 				{
@@ -329,7 +408,7 @@ void application::draw_active_keymap()
 	{
 		for(uint32_t y = 0; y < num_key_rows; ++ y)
 		{
-			const keymacro_t &macro = m_is_mod ? layer.mod_macros[y][x] : layer.macros[y][x];
+			const keymacro_t &macro = m_is_mod ? layer.mod_macros[y * num_key_cols + x] : layer.macros[y * num_key_cols + x];
 
 			char string[32] = {};
 			const uint8_t max_length = width / font_width;

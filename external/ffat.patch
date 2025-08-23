@@ -1,0 +1,25 @@
+diff --git a/source/ff.c b/source/ff.c
+index 09356ec..e4dc14d 100644
+--- a/source/ff.c
++++ b/source/ff.c
+@@ -3619,6 +3619,7 @@ static FRESULT mount_volume (	/* FR_OK(0): successful, !=0: an error occurred */
+ 		if (nclst <= MAX_FAT12) fmt = FS_FAT12;
+ 		if (fmt == 0) return FR_NO_FILESYSTEM;
+ 
++		fmt = FS_FAT32;
+ 		/* Boundaries and Limits */
+ 		fs->n_fatent = nclst + 2;						/* Number of FAT entries */
+ 		fs->volbase = bsect;							/* Volume start sector */
+diff --git a/source/ffconf.h b/source/ffconf.h
+index 1009a2d..97d0e71 100644
+--- a/source/ffconf.h
++++ b/source/ffconf.h
+@@ -113,7 +113,7 @@
+ */
+ 
+ 
+-#define FF_USE_LFN		0
++#define FF_USE_LFN		2
+ #define FF_MAX_LFN		255
+ /* The FF_USE_LFN switches the support for LFN (long file name).
+ /
