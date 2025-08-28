@@ -6,6 +6,22 @@
 #include <bsp/board_api.h>
 #include "usb_descriptor.h"
 
+extern size_t usb_get_hid_report_desc_len();
+
+static uint8_t s_usb_feature_flags = USB_FEATURE_HID;
+
+void usb_set_enabled_features(uint8_t flags)
+{
+	if(s_usb_feature_flags == flags)
+		return;
+
+	s_usb_feature_flags = flags;
+
+	tud_disconnect();
+	sleep_ms(100);
+	tud_connect();
+}
+
 //--------------------------------------------------------------------+
 // Device Descriptor
 //--------------------------------------------------------------------+
@@ -43,51 +59,56 @@ const uint8_t *tud_descriptor_device_cb()
 }
 
 //--------------------------------------------------------------------+
-// HID Report Descriptor
-//--------------------------------------------------------------------+
-
-static uint8_t desc_hid_report[] =
-{
-	TUD_HID_REPORT_DESC_KEYBOARD(HID_REPORT_ID(REPORT_ID_KEYBOARD)),
-};
-
-const uint8_t *tud_hid_descriptor_report_cb(uint8_t instance)
-{
-	return desc_hid_report;
-}
-
-//--------------------------------------------------------------------+
 // Configuration Descriptor
 //--------------------------------------------------------------------+
-
-enum
-{
-	ITF_NUM_HID,
-	ITF_NUM_MSC,
-	ITF_NUM_TOTAL
-};
-
-#define CONFIG_TOTAL_LEN (TUD_CONFIG_DESC_LEN + TUD_HID_DESC_LEN + TUD_MSC_DESC_LEN)
 
 #define EPNUM_HID   0x82
 
 #define EPNUM_MSC_OUT     0x01
 #define EPNUM_MSC_IN      0x81
 
-const uint8_t desc_configuration[] =
-{
-	// Config number, interface count, string index, total length, attribute, power in mA
-	TUD_CONFIG_DESCRIPTOR(1, ITF_NUM_TOTAL, 0, CONFIG_TOTAL_LEN, TUSB_DESC_CONFIG_ATT_REMOTE_WAKEUP, 100),
-
-	// Interface number, string index, protocol, report descriptor len, EP In address, size & polling interval
-	TUD_HID_DESCRIPTOR(ITF_NUM_HID, 0, HID_ITF_PROTOCOL_NONE, sizeof(desc_hid_report), EPNUM_HID, CFG_TUD_HID_EP_BUFSIZE, 5),
-
-	// Interface number, string index, EP Out & EP In address, EP size
-	TUD_MSC_DESCRIPTOR(ITF_NUM_MSC, 0, EPNUM_MSC_OUT, EPNUM_MSC_IN, 64),
-};
+#define CONFIG_MAX_LEN (TUD_CONFIG_DESC_LEN + TUD_HID_DESC_LEN + TUD_MSC_DESC_LEN)
+uint8_t desc_configuration[CONFIG_MAX_LEN];
 
 const uint8_t *tud_descriptor_configuration_cb(uint8_t index)
 {
+	size_t offset = TUD_CONFIG_DESC_LEN;
+	uint8_t interface = 0;
+
+	if(s_usb_feature_flags & USB_FEATURE_HID)
+	{
+		uint8_t hid_config[] = {
+			// Interface number, string index, protocol, report descriptor len, EP In address, size & polling interval
+			TUD_HID_DESCRIPTOR(interface ++, 0, HID_ITF_PROTOCOL_NONE, usb_get_hid_report_desc_len(), EPNUM_HID, CFG_TUD_HID_EP_BUFSIZE, 5),
+		};
+
+		static_assert(TUD_HID_DESC_LEN == sizeof(hid_config));
+
+		memcpy(desc_configuration + offset, hid_config, sizeof(hid_config));
+		offset += sizeof(hid_config);
+	}
+
+	if(s_usb_feature_flags & USB_FEATURE_MSC)
+	{
+		uint8_t msc_config[] = {
+			// Interface number, string index, EP Out & EP In address, EP size
+			TUD_MSC_DESCRIPTOR(interface ++, 0, EPNUM_MSC_OUT, EPNUM_MSC_IN, 64),
+		};
+
+		static_assert(TUD_MSC_DESC_LEN == sizeof(msc_config));
+
+		memcpy(desc_configuration + offset, msc_config, sizeof(msc_config));
+		offset += sizeof(msc_config);
+	}
+
+	{
+		uint8_t config[] = {
+			TUD_CONFIG_DESCRIPTOR(1, interface, 0, offset, TUSB_DESC_CONFIG_ATT_REMOTE_WAKEUP, 100),
+		};
+
+		memcpy(desc_configuration, config, sizeof(config));
+	}
+
 	return desc_configuration;
 }
 
@@ -135,11 +156,3 @@ const uint16_t *tud_descriptor_string_cb(uint8_t index, uint16_t langid)
 	desc_str_temp[0] = (uint16_t)((TUSB_DESC_STRING << 8) | (2 * count + 2));
 	return desc_str_temp;
 }
-
-uint16_t tud_hid_get_report_cb(uint8_t instance, uint8_t report_id, hid_report_type_t report_type, uint8_t *buffer, uint16_t reqlen)
-{
-	return 0;
-}
-
-void tud_hid_set_report_cb(uint8_t instance, uint8_t report_id, hid_report_type_t report_type, uint8_t const *buffer, uint16_t bufsize)
-{}

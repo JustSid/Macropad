@@ -13,6 +13,7 @@
 enum class action_t
 {
 	flash,
+	configure,
 	brightness_up,
 	brightness_down,
 };

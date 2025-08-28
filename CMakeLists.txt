@@ -49,7 +49,8 @@ add_executable(macropad
 	source/logic/application.h
 	source/usb/usb_descriptor.cpp
 	source/usb/usb_descriptor.h
-	source/usb/usb_mass_storage.cpp)
+	source/usb/usb_hid.cpp
+	source/usb/usb_msc.cpp)
 
 target_link_libraries(macropad pico_stdlib hardware_i2c hardware_adc tinyusb_device tinyusb_board fatfs tiny-json)
 target_compile_definitions(macropad PUBLIC CFG_TUSB_CONFIG_FILE=<usb/tusb_config.h>)

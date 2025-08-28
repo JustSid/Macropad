@@ -11,7 +11,6 @@
 #include <tiny-json.h>
 #include "application.h"
 
-
 void application::init()
 {
 	i2c_inst_t *i2c = i2c0;
@@ -39,6 +38,12 @@ void application::init()
 	m_needs_redraw = true;
 }
 
+void application::usb_ejected()
+{
+	m_next_state = state_t::keypad;
+}
+
+
 void application::load_configuration()
 {
 	for(auto &key : m_keymaps)
@@ -46,11 +51,11 @@ void application::load_configuration()
 
 	m_keymaps.clear();
 
+
 	parse_configuration();
-
 	m_keymaps.push_back(build_system_keymap());
-	m_current_keymap = 0;
 
+	m_current_keymap = 0;
 	m_needs_redraw = true;
 }
 
@@ -118,16 +123,10 @@ void application::parse_configuration()
 	}
 }
 
-
-void application::update()
+bool application::update_keypad()
 {
-	m_keymatrix.update();
-
 	if(m_process_input)
 		process_input();
-
-	// Analog stick input
-	m_analogstick.update();
 
 	const uint16_t stick_x = m_analogstick.get_x_value(display_width);
 	const uint16_t stick_y = m_analogstick.get_y_value(display_height);
@@ -167,40 +166,78 @@ void application::update()
 		has_stick_input = true;
 	}
 
-	const uint32_t now = to_ms_since_boot(get_absolute_time());
-	const bool has_input = has_stick_input || m_keymatrix.has_state_changed();
+	m_previous_analog_x = stick_x;
+	m_previous_analog_y = stick_y;
 
-	if(has_input)
+	return has_stick_input;
+}
+
+void application::update()
+{
+	if(m_next_state != m_state)
 	{
-		if(tud_suspended())
-			tud_remote_wakeup();
+		switch(m_next_state)
+		{
+			case state_t::keypad:
+				load_configuration();
+				usb_set_enabled_features(USB_FEATURE_HID);
+				break;
+			case state_t::configure:
+				usb_set_enabled_features(USB_FEATURE_MSC);
+				break;
+		}
 
-		m_last_input = now;
+		m_state = m_next_state;
 		m_needs_redraw = true;
+
+		return;
 	}
 
-	// Misc logic handling and state transitions
-	if(!m_process_input && m_is_screen_on)
+	m_keymatrix.update();
+	m_analogstick.update();
+
+	const uint32_t now = to_ms_since_boot(get_absolute_time());
+
+	switch(m_state)
 	{
-		// Give any key event 100ms to settle before enabling input again
-		// Otherwise spurious events might creep in from lack of debounce
-		if((now - m_last_input) >= 150)
-			m_process_input = true;
+		case state_t::keypad:
+		{
+			if(update_keypad() || m_keymatrix.has_state_changed())
+			{
+				if(tud_suspended())
+					tud_remote_wakeup();
+
+				m_last_input = now;
+				m_needs_redraw = true;
+			}
+
+			// Misc logic handling and state transitions
+			if(!m_process_input && m_is_screen_on)
+			{
+				// Give any key event 100ms to settle before enabling input again
+				// Otherwise spurious events might creep in from lack of debounce
+				if((now - m_last_input) >= 150)
+					m_process_input = true;
+			}
+
+			break;
+		}
+
+		case state_t::configure:
+			m_last_input = now;
+			break;
 	}
 
 	if(m_needs_redraw)
 	{
 		m_needs_redraw = false;
 
-		draw_active_keymap();
+		draw();
 		m_display.update();
 	}
 
 	tud_task();
 	set_display_on((now - m_last_input) <= m_screen_timeout);
-
-	m_previous_analog_x = stick_x;
-	m_previous_analog_y = stick_y;
 }
 
 void application::usb_state_changed()
@@ -358,6 +395,12 @@ void application::execute_action(action_t action)
 			break;
 		}
 
+		case action_t::configure:
+		{
+			m_next_state = state_t::configure;
+			break;
+		}
+
 		case action_t::brightness_down:
 		{
 			if(m_brightness > 5)
@@ -382,11 +425,25 @@ void application::execute_action(action_t action)
 	}
 }
 
+void application::draw()
+{
+	m_display.clear();
+
+	switch(m_state)
+	{
+		case state_t::keypad:
+			draw_active_keymap();
+			break;
+
+		case state_t::configure:
+			draw_string(&m_display, "Configuring...", true, 0, (display_height - font_height) / 2, display_width, text_justification_t::center);
+			break;
+	}
+}
+
 void application::draw_active_keymap()
 {
 	keymap_t *keymap = get_active_keymap();
-
-	m_display.clear();
 
 	draw_string(&m_display, keymap->title, true, 0, 0, display_width);
 	m_display.stroke_line_horizontal(0, font_height, display_width, true);
@@ -530,10 +587,13 @@ void application::draw_active_keymap()
 					switch(macro.action.action)
 					{
 						case action_t::flash:
-							length += strlcpy(string + length, "Flash ", max_length - length);
+							length += strlcpy(string + length, "Flash", max_length - length);
+							break;
+						case action_t::configure:
+							length += strlcpy(string + length, "Config", max_length - length);
 							break;
 						case action_t::brightness_down:
-							length += strlcpy(string + length, "Brt - ", max_length - length);
+							length += strlcpy(string + length, "Brt -", max_length - length);
 							break;
 						case action_t::brightness_up:
 							length += strlcpy(string + length, "Brt +", max_length - length);

@@ -196,7 +196,7 @@ void flashfs_create_initial_files()
 	if(f_open(&file, "/config.json", FA_CREATE_ALWAYS | FA_WRITE) == FR_OK)
 	{
 		UINT bw;
-		const char *json = "{\n}\n";
+		const char *json = "[\n]\n";
 		f_write(&file, json, strlen(json), &bw);
 		f_close(&file);
 	}

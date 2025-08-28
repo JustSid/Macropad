@@ -46,7 +46,7 @@ keymap_t *build_system_keymap()
 	size_t index = 0;
 
 	keylayer_t layer;
-	layer.macros[index ++] = build_action_macro(action_t::flash);
+	layer.macros[index ++] = build_action_macro(action_t::configure);
 	layer.macros[index ++] = build_action_macro(action_t::brightness_up);
 	layer.macros[index ++] = build_action_macro(action_t::brightness_down);
 
@@ -56,7 +56,7 @@ keymap_t *build_system_keymap()
 
 	layer.macros[index ++] = build_hid_macro(HID_KEY_ESCAPE);
 	layer.macros[index ++] = build_hid_macro(HID_KEY_ENTER);
-	layer.macros[index ++] = build_hid_macro(HID_KEY_Y, KEYBOARD_MODIFIER_LEFTCTRL);
+	layer.macros[index ++] = build_action_macro(action_t::flash);
 
 	keymap_t *map = new keymap_t;
 	map->title = "System";

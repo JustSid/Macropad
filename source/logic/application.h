@@ -23,13 +23,24 @@ public:
 	void update();
 
 	void usb_state_changed();
-	void load_configuration();
+	void usb_ejected();
 
 private:
+	enum class state_t
+	{
+		keypad,
+		configure
+	};
+
+	void load_configuration();
 	void parse_configuration();
+
 	void set_display_on(bool display_on);
 
+	void draw();
 	void draw_active_keymap();
+
+	bool update_keypad();
 
 	void process_input();
 	void execute_action(action_t action);
@@ -38,6 +49,9 @@ private:
 
 	void keymap_cycle_layer(bool cycle_next);
 	void keymap_cycle(bool cycle_next);
+
+	state_t m_state = state_t::keypad;
+	state_t m_next_state = state_t::keypad;
 
 	display_t m_display;
 	keymatrix_t m_keymatrix;

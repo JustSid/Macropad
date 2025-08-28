@@ -37,3 +37,57 @@ The pins can be configured via the config.h file, but the defaults are:
  - Display: SDA GPIO 16, SCL GPIO 17
  - Thumbstick: X axis GPIO 26, Y axis GPIO 27 (input and ground wired to the ADC pins)
 
+# Configuration
+
+The device is configured via a JSON file that can be accessed by navigating to the "System" keymap and hitting "Config". This will disable the HID keyboard and turn the device into a USB mass storage device with 64kb of storage with a "config.json" file in it. Once the configuration is on the device, ejecting the device will store it in the internal flash and reload the keymap configuration.
+
+## Config syntax
+
+The root object must be an array with each entry being one keymap. The keymaps are objects with the following keys:
+
+ - `name`: The name of the keymap
+ - `layers`: An array of layer objects
+
+The layers array contains one or more key layer objects with the following keys:
+
+ - `base`: The base layer that is displayed by default
+ - `mod`: An optional mod array that is enabled when the mod key is pressed
+
+Each actual layer is an array of objects, one per key to be mapped (top left to bottom right):
+
+ - `t`: The type of key, either `mod` or `hid` (defaults to `hid` if unspecified)
+ - `v`: The value of the key, for `hid` types this is the key to be pressed (single key only, must be uppercase, eg. `"X"`). Special values (case-sensitive):
+    - `Tab`
+    - `ESC`
+    - `DEL`
+    - `Enter`
+    - `Space`
+ - `m`: Modifiers to add to the key (`hid` only). Can be one of: `lctrl`, `rctrl`, `lshft`, `rshft`, `lalt` or `ralt`
+
+## Example
+
+Check out the examples folder for a full examples, but here is the high level overview
+
+```json
+[
+  {
+    "name": "Foo",
+    "layers": [
+      {
+        "base": [
+          {
+            "t": "mod"
+          },
+          {
+            "v": "X"
+          }
+        ],
+        "mod": ...
+      },
+      ...
+    ]
+  },
+  ...
+]
+```
+

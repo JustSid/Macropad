@@ -49,5 +49,5 @@ void tud_resume_cb()
 void usb_ejected()
 {
 	flashfs_flush();
-	app.load_configuration();
+	app.usb_ejected();
 }
