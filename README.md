@@ -37,6 +37,14 @@ The pins can be configured via the config.h file, but the defaults are:
  - Display: SDA GPIO 16, SCL GPIO 17
  - Thumbstick: X axis GPIO 26, Y axis GPIO 27 (input and ground wired to the ADC pins)
 
+## Compiling
+
+Run CMake, specifying the Pico SDK path via the `PICO_SDK_PATH` environment variable and the board type via the `PICO_BOARD` CMake variable. Example:
+
+```sh
+PICO_SDK_PATH=foo cmake -DPICO_BOARD=pico2 -G Ninja -S "source dir" -B "binary dir"
+```
+
 # Configuration
 
 The device is configured via a JSON file that can be accessed by navigating to the "System" keymap and hitting "Config". This will disable the HID keyboard and turn the device into a USB mass storage device with 64kb of storage with a "config.json" file in it. Once the configuration is on the device, ejecting the device will store it in the internal flash and reload the keymap configuration.
