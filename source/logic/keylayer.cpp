@@ -66,7 +66,7 @@ keymap_t *build_system_keymap()
 	return map;
 }
 
-void parse_macros(keymacro_t *macros, const json_t *json)
+void parse_macros(keymacro_t *macros, keymacro_t *reference, const json_t *json)
 {
 	if(json_getType(json) != JSON_ARRAY)
 		return;
@@ -75,6 +75,16 @@ void parse_macros(keymacro_t *macros, const json_t *json)
 
 	for(const json_t *entry = json_getChild(json); entry; entry = json_getSibling(entry))
 	{
+		if(reference && reference[index].type == keymacro_t::type_t::mod)
+		{
+			macros[index] = reference[index];
+
+			if((++ index) >= num_key_cols * num_key_rows)
+				return;
+
+			continue;
+		}
+
 		const char *type = json_getPropertyValue(entry, "t");
 		if(!type)
 			type = "hid";
@@ -86,8 +96,10 @@ void parse_macros(keymacro_t *macros, const json_t *json)
 			macro.type = keymacro_t::type_t::action;
 		if(strcmp(type, "mod") == 0)
 		{
+			const json_t *persist = json_getProperty(entry, "p");
+
 			macro.type = keymacro_t::type_t::mod;
-			macro.mod.persist = false;
+			macro.mod.persist = (persist && json_getBoolean(persist));
 		}
 		if(strcmp(type, "hid") == 0)
 		{
@@ -226,11 +238,11 @@ keymap_t *parse_keymap(const json_t *keymap)
 			continue;
 
 		keylayer_t parsed;
-		parse_macros(parsed.macros, base);
+		parse_macros(parsed.macros, nullptr, base);
 
 		const json_t *mod = json_getProperty(layer, "mod");
 		if(mod)
-			parse_macros(parsed.mod_macros, base);
+			parse_macros(parsed.mod_macros, parsed.macros, mod);
 
 		result->layers.push_back(parsed);
 	}
