@@ -52,13 +52,14 @@ struct keymacro_t
 
 struct keylayer_t
 {
+	const char *name;
 	keymacro_t macros[num_key_rows * num_key_cols] = {};
 	keymacro_t mod_macros[num_key_rows * num_key_cols] = {};
 };
 
 struct keymap_t
 {
-	const char *title;
+	const char *name;
 	std::vector<keylayer_t> layers;
 	uint8_t active_page;
 };

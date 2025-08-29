@@ -444,19 +444,28 @@ void application::draw()
 void application::draw_active_keymap()
 {
 	keymap_t *keymap = get_active_keymap();
+	const keylayer_t &layer = keymap->layers[keymap->active_page];
 
-	draw_string(&m_display, keymap->title, true, 0, 0, display_width);
-	m_display.stroke_line_horizontal(0, font_height, display_width, true);
-
-	if(keymap->layers.size() > 1)
 	{
-		char text[16];
-		sprintf(text, "%d/%d", (int)(keymap->active_page + 1), (int)keymap->layers.size());
+		uint16_t offset = draw_string(&m_display, keymap->name, true, 0, 0, display_width);
 
-		draw_string(&m_display, text, true, 0, 0, display_width, text_justification_t::right);
+		if(layer.name)
+		{
+			offset += draw_string(&m_display, "|", true, offset, 0, display_width);
+			draw_string(&m_display, layer.name, true, offset, 0, display_width);
+		}
+
+		m_display.stroke_line_horizontal(0, font_height, display_width, true);
+
+		if(keymap->layers.size() > 1)
+		{
+			char text[16];
+			sprintf(text, "%d/%d", (int)(keymap->active_page + 1), (int)keymap->layers.size());
+
+			draw_string(&m_display, text, true, 0, 0, display_width, text_justification_t::right);
+		}
 	}
 
-	const keylayer_t &layer = keymap->layers[keymap->active_page];
 
 	const uint32_t width = display_width / num_key_cols;
 	const uint32_t height = (display_height - 8) / num_key_rows;

@@ -59,7 +59,7 @@ keymap_t *build_system_keymap()
 	layer.macros[index ++] = build_action_macro(action_t::flash);
 
 	keymap_t *map = new keymap_t;
-	map->title = "System";
+	map->name = "System";
 	map->active_page = 0;
 	map->layers.push_back(layer);
 
@@ -105,7 +105,7 @@ void parse_macros(keymacro_t *macros, keymacro_t *reference, const json_t *json)
 		{
 			macro.type = keymacro_t::type_t::hid_key;
 			macro.hid_key.modifier = 0;
-			macro.hid_key.keycode = HID_KEY_ENTER;
+			macro.hid_key.keycode = HID_KEY_NONE;
 		}
 
 		if(macro.type == keymacro_t::type_t::hid_key)
@@ -196,13 +196,13 @@ void parse_macros(keymacro_t *macros, keymacro_t *reference, const json_t *json)
 				}
 				else
 				{
-					if(strcmp(value, "enter") == 0)
+					if(strcmp(value, "Enter") == 0)
 						macro.hid_key.keycode = HID_KEY_ENTER;
 					if(strcmp(value, "ESC") == 0)
 						macro.hid_key.keycode = HID_KEY_ESCAPE;
 					if(strcmp(value, "DEL") == 0)
 						macro.hid_key.keycode = HID_KEY_DELETE;
-					if(strcmp(value, "TAB") == 0)
+					if(strcmp(value, "Tab") == 0)
 						macro.hid_key.keycode = HID_KEY_TAB;
 				}
 			}
@@ -225,11 +225,11 @@ keymap_t *parse_keymap(const json_t *keymap)
 		return nullptr;
 
 	keymap_t *result = new keymap_t;
-	result->title = json_getPropertyValue(keymap, "name");
+	result->name = json_getPropertyValue(keymap, "name");
 	result->active_page = 0;
 
-	if(!result->title)
-		result->title = "No name";
+	if(!result->name)
+		result->name = "No name";
 
 	for(const json_t *layer = json_getChild(layers); layer; layer = json_getSibling(layer))
 	{
@@ -243,6 +243,10 @@ keymap_t *parse_keymap(const json_t *keymap)
 		const json_t *mod = json_getProperty(layer, "mod");
 		if(mod)
 			parse_macros(parsed.mod_macros, parsed.macros, mod);
+
+		const json_t *name = json_getProperty(layer, "name");
+		if(name && json_getType(name) == JSON_TEXT)
+			parsed.name = json_getValue(name);
 
 		result->layers.push_back(parsed);
 	}

@@ -60,6 +60,7 @@ The layers array contains one or more key layer objects with the following keys:
 
  - `base`: The base layer that is displayed by default
  - `mod`: An optional mod array that is enabled when the mod key is pressed
+ - `name`: An optional text object with the name of the layer
 
 Each actual layer is an array of objects, one per key to be mapped (top left to bottom right):
 
@@ -69,7 +70,6 @@ Each actual layer is an array of objects, one per key to be mapped (top left to 
     - `ESC`
     - `DEL`
     - `Enter`
-    - `Space`
  - `m`: Modifiers to add to the key (`hid` only). Can be one of: `lctrl`, `rctrl`, `lshft`, `rshft`, `lalt` or `ralt`
  - `p`: Boolean to indicate if the key is a toggle or not (`mod` only, default `false`)
 

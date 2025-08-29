@@ -8,12 +8,14 @@
 #include "font.h"
 #include "drawing.h"
 
-void draw_string(display_t *display, const char *text, bool foreground, uint16_t start_x, uint16_t start_y, uint16_t max_width, uint16_t max_lines)
+uint16_t draw_string(display_t *display, const char *text, bool foreground, uint16_t start_x, uint16_t start_y, uint16_t max_width, uint16_t max_lines)
 {
 	const size_t length = strlen(text);
 
 	uint16_t offset_x = 0;
 	uint16_t offset_y = 0;
+
+	uint16_t greatest_width = 0;
 
 	for(size_t i = 0; i < length; i ++)
 	{
@@ -34,32 +36,31 @@ void draw_string(display_t *display, const char *text, bool foreground, uint16_t
 
 		if(offset_x >= max_width)
 		{
+			greatest_width = std::max(greatest_width, offset_x);
+
 			offset_x = 0;
 			offset_y += font_height;
 		}
-
-		if(offset_y > max_lines * font_height)
-			return;
 	}
+
+	return std::max(greatest_width, offset_x);
 }
 
-void draw_string(display_t *display, const char *text, bool foreground, uint16_t start_x, uint16_t start_y, uint16_t max_width, text_justification_t justification)
+uint16_t draw_string(display_t *display, const char *text, bool foreground, uint16_t start_x, uint16_t start_y, uint16_t max_width, text_justification_t justification)
 {
 	const uint16_t max_chars = max_width / font_width;
 
 	switch(justification)
 	{
 		case text_justification_t::left:
-			draw_string(display, text, foreground, start_x, start_y, max_width);
-			break;
+			return draw_string(display, text, foreground, start_x, start_y, max_width);
 
 		case text_justification_t::center:
 		{
 			const size_t length = std::min(strlen(text), size_t(max_chars));
 			const uint16_t offset = ((max_chars - length) / 2) * font_width;
 
-			draw_string(display, text, foreground, start_x + offset, start_y, length * font_width, 1);
-			break;
+			return draw_string(display, text, foreground, start_x + offset, start_y, length * font_width, 1);
 		}
 
 		case text_justification_t::right:
@@ -67,8 +68,9 @@ void draw_string(display_t *display, const char *text, bool foreground, uint16_t
 			const size_t length = std::min(strlen(text), size_t(max_chars));
 			const uint16_t offset = (max_chars - length) * font_width;
 
-			draw_string(display, text, foreground, start_x + offset, start_y, length * font_width, 1);
-			break;
+			return draw_string(display, text, foreground, start_x + offset, start_y, length * font_width, 1);
 		}
 	}
+
+	return 0;
 }

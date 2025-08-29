@@ -14,7 +14,7 @@ enum class text_justification_t
 	right
 };
 
-void draw_string(display_t *display, const char *text, bool foreground, uint16_t start_x, uint16_t start_y, uint16_t max_width, uint16_t max_lines = 1);
-void draw_string(display_t *display, const char *text, bool foreground, uint16_t start_x, uint16_t start_y, uint16_t max_width, text_justification_t justification);
+uint16_t draw_string(display_t *display, const char *text, bool foreground, uint16_t start_x, uint16_t start_y, uint16_t max_width, uint16_t max_lines = 1);
+uint16_t draw_string(display_t *display, const char *text, bool foreground, uint16_t start_x, uint16_t start_y, uint16_t max_width, text_justification_t justification);
 
 #endif //DRAWING_H
