@@ -30,37 +30,46 @@ void keymatrix_t::init(const std::span<const uint32_t> &row_pins, const std::spa
 
 void keymatrix_t::update()
 {
+	const uint32_t now = to_ms_since_boot(get_absolute_time());
+	if((now - m_last_update) < 10)
+		return;
+
+	m_last_update = now;
 	m_changes = 0;
 
 	for(size_t i = 0; i < m_rows.size(); i ++)
 	{
 		gpio_put(m_rows[i], true);
+		sleep_us(10);
 
 		for(uint j = 0; j < m_columns.size(); j ++)
 		{
 			const uint32_t index = index_for_coord(i, j);
 
 			const bool previous = m_state & (1 << index);
-			bool result = gpio_get(m_columns[j]);
+			const bool result = gpio_get(m_columns[j]);
+
+			const uint32_t bit = (1 << index);
 
 			if(result != previous)
 			{
-				sleep_ms(1);
-				result = gpio_get(m_columns[j]);
-			}
+				if(m_pending & bit)
+				{
+					if(result)
+						m_state |= bit;
+					else
+						m_state &= ~bit;
 
-			if(result != previous)
-			{
-				if(result)
-					m_state |= (1 << index);
+					m_changes |= bit;
+				}
 				else
-					m_state &= ~(1 << index);
-
-				m_changes |= 1 << index;
+					m_pending |= bit;
 			}
+			else
+				m_pending &= ~bit;
 		}
 
 		gpio_put(m_rows[i], false);
-		sleep_ms(1);
+		sleep_us(50);
 	}
 }

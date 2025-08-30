@@ -29,6 +29,9 @@ private:
 
 	uint32_t m_state = 0;
 	uint32_t m_changes = 0;
+	uint32_t m_pending = 0;
+
+	uint32_t m_last_update = 0;
 
 	std::span<const uint32_t> m_rows;
 	std::span<const uint32_t> m_columns;
