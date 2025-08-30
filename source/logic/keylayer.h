@@ -52,7 +52,7 @@ struct keymacro_t
 
 struct keylayer_t
 {
-	const char *name;
+	const char *name = nullptr;
 	keymacro_t macros[num_key_rows * num_key_cols] = {};
 	keymacro_t mod_macros[num_key_rows * num_key_cols] = {};
 };
