@@ -65,13 +65,10 @@ The layers array contains one or more key layer objects with the following keys:
 Each actual layer is an array of objects, one per key to be mapped (top left to bottom right):
 
  - `t`: The type of key, either `mod` or `hid` (defaults to `hid` if unspecified)
- - `v`: The value of the key, for `hid` types this is the key to be pressed (single key only, must be uppercase, eg. `"X"`). Special values (case-sensitive):
-    - `Tab`
-    - `ESC`
-    - `DEL`
-    - `Enter`
+ - `v`: The value of the key (`hid` only, defaults to none), this is the same as defined in hid.h but without the `HID_KEY_` prefix
  - `m`: Modifiers to add to the key (`hid` only). Can be one of: `lctrl`, `rctrl`, `lshft`, `rshft`, `lalt` or `ralt`
  - `p`: Boolean to indicate if the key is a toggle or not (`mod` only, default `false`)
+ - `l`: The label to display for the key (`hid` only)
 
 ## Example
 

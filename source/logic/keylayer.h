@@ -36,6 +36,7 @@ struct keymacro_t
 		{
 			uint8_t modifier;
 			uint8_t keycode;
+			const char *label;
 		} hid_key;
 
 		struct

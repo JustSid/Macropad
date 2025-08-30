@@ -451,7 +451,9 @@ void application::draw_active_keymap()
 
 		if(layer.name)
 		{
-			offset += draw_string(&m_display, "|", true, offset, 0, display_width);
+			offset += 1;
+			offset += draw_string(&m_display, "|", true, offset, 0, display_width) + 1;
+
 			draw_string(&m_display, layer.name, true, offset, 0, display_width);
 		}
 
@@ -465,7 +467,6 @@ void application::draw_active_keymap()
 			draw_string(&m_display, text, true, 0, 0, display_width, text_justification_t::right);
 		}
 	}
-
 
 	const uint32_t width = display_width / num_key_cols;
 	const uint32_t height = (display_height - 8) / num_key_rows;
@@ -496,6 +497,12 @@ void application::draw_active_keymap()
 
 				case keymacro_t::type_t::hid_key:
 				{
+					if(macro.hid_key.label && macro.hid_key.label[0] != '\0')
+					{
+						length += strlcpy(string + length, macro.hid_key.label, max_length - length);
+						break;
+					}
+
 					const uint8_t modifier = macro.hid_key.modifier;
 					const uint8_t keycode = macro.hid_key.keycode;
 
@@ -511,76 +518,167 @@ void application::draw_active_keymap()
 							length += strlcpy(string + length, "Alt ", max_length - length);
 					}
 
-#define MAP_SINGLE_CHAR(key) \
+#define MAP_DIRECT_CHAR(key) \
 				case HID_KEY_##key: \
 					string[length ++] = *(#key); \
 					break
 
+#define MAP_SINGLE_CHAR(key, chr) \
+				case HID_KEY_##key: \
+					string[length ++] = chr; \
+					break
+
+#define MAP_STRING_CHAR(key, text) \
+				case HID_KEY_##key: \
+					length += strlcpy(string + length, text, max_length - length); \
+					break
+
 					switch(keycode)
 					{
-						MAP_SINGLE_CHAR(A);
-						MAP_SINGLE_CHAR(B);
-						MAP_SINGLE_CHAR(C);
-						MAP_SINGLE_CHAR(D);
-						MAP_SINGLE_CHAR(E);
-						MAP_SINGLE_CHAR(F);
-						MAP_SINGLE_CHAR(G);
-						MAP_SINGLE_CHAR(H);
-						MAP_SINGLE_CHAR(I);
-						MAP_SINGLE_CHAR(J);
-						MAP_SINGLE_CHAR(K);
-						MAP_SINGLE_CHAR(L);
-						MAP_SINGLE_CHAR(M);
-						MAP_SINGLE_CHAR(N);
-						MAP_SINGLE_CHAR(O);
-						MAP_SINGLE_CHAR(P);
-						MAP_SINGLE_CHAR(Q);
-						MAP_SINGLE_CHAR(R);
-						MAP_SINGLE_CHAR(S);
-						MAP_SINGLE_CHAR(T);
-						MAP_SINGLE_CHAR(U);
-						MAP_SINGLE_CHAR(V);
-						MAP_SINGLE_CHAR(W);
-						MAP_SINGLE_CHAR(X);
-						MAP_SINGLE_CHAR(Y);
-						MAP_SINGLE_CHAR(Z);
+						MAP_DIRECT_CHAR(A);
+						MAP_DIRECT_CHAR(B);
+						MAP_DIRECT_CHAR(C);
+						MAP_DIRECT_CHAR(D);
+						MAP_DIRECT_CHAR(E);
+						MAP_DIRECT_CHAR(F);
+						MAP_DIRECT_CHAR(G);
+						MAP_DIRECT_CHAR(H);
+						MAP_DIRECT_CHAR(I);
+						MAP_DIRECT_CHAR(J);
+						MAP_DIRECT_CHAR(K);
+						MAP_DIRECT_CHAR(L);
+						MAP_DIRECT_CHAR(M);
+						MAP_DIRECT_CHAR(N);
+						MAP_DIRECT_CHAR(O);
+						MAP_DIRECT_CHAR(P);
+						MAP_DIRECT_CHAR(Q);
+						MAP_DIRECT_CHAR(R);
+						MAP_DIRECT_CHAR(S);
+						MAP_DIRECT_CHAR(T);
+						MAP_DIRECT_CHAR(U);
+						MAP_DIRECT_CHAR(V);
+						MAP_DIRECT_CHAR(W);
+						MAP_DIRECT_CHAR(X);
+						MAP_DIRECT_CHAR(Y);
+						MAP_DIRECT_CHAR(Z);
 
-						MAP_SINGLE_CHAR(0);
-						MAP_SINGLE_CHAR(1);
-						MAP_SINGLE_CHAR(2);
-						MAP_SINGLE_CHAR(3);
-						MAP_SINGLE_CHAR(4);
-						MAP_SINGLE_CHAR(5);
-						MAP_SINGLE_CHAR(6);
-						MAP_SINGLE_CHAR(7);
-						MAP_SINGLE_CHAR(8);
-						MAP_SINGLE_CHAR(9);
+						MAP_DIRECT_CHAR(1);
+						MAP_DIRECT_CHAR(2);
+						MAP_DIRECT_CHAR(3);
+						MAP_DIRECT_CHAR(4);
+						MAP_DIRECT_CHAR(5);
+						MAP_DIRECT_CHAR(6);
+						MAP_DIRECT_CHAR(7);
+						MAP_DIRECT_CHAR(8);
+						MAP_DIRECT_CHAR(9);
+						MAP_DIRECT_CHAR(0);
 
-						case HID_KEY_TAB:
-							length += strlcpy(string + length, "Tab", max_length - length);
-							break;
+						MAP_STRING_CHAR(ENTER, "Enter");
+						MAP_STRING_CHAR(ESCAPE, "ESC");
+						MAP_STRING_CHAR(BACKSPACE, "Bckspce");
+						MAP_STRING_CHAR(TAB, "Tab");
+						MAP_STRING_CHAR(SPACE, "Space");
+						MAP_SINGLE_CHAR(MINUS, '-');
+						MAP_SINGLE_CHAR(EQUAL, '=');
 
-						case HID_KEY_ESCAPE:
-							length += strlcpy(string + length, "ESC", max_length - length);
-							break;
+						MAP_SINGLE_CHAR(BRACKET_LEFT, '[');
+						MAP_SINGLE_CHAR(BRACKET_RIGHT, ']');
 
-						case HID_KEY_DELETE:
-							length += strlcpy(string + length, "DEL", max_length - length);
-							break;
+						MAP_SINGLE_CHAR(BACKSLASH, '/');
+						MAP_SINGLE_CHAR(SEMICOLON, ';');
+						MAP_SINGLE_CHAR(APOSTROPHE, '\'');
+						MAP_SINGLE_CHAR(GRAVE, '/');
+						MAP_SINGLE_CHAR(COMMA, ',');
+						MAP_SINGLE_CHAR(PERIOD, '.');
+						MAP_SINGLE_CHAR(SLASH, '\\');
+						MAP_STRING_CHAR(CAPS_LOCK, "CAPS");
 
-						case HID_KEY_ENTER:
-							length += strlcpy(string + length, "Enter", max_length - length);
-							break;
+						MAP_STRING_CHAR(F1, "F1");
+						MAP_STRING_CHAR(F2, "F2");
+						MAP_STRING_CHAR(F3, "F3");
+						MAP_STRING_CHAR(F4, "F4");
+						MAP_STRING_CHAR(F5, "F5");
+						MAP_STRING_CHAR(F6, "F6");
+						MAP_STRING_CHAR(F7, "F7");
+						MAP_STRING_CHAR(F8, "F8");
+						MAP_STRING_CHAR(F9, "F9");
+						MAP_STRING_CHAR(F10, "F10");
+						MAP_STRING_CHAR(F11, "F11");
+						MAP_STRING_CHAR(F12, "F12");
 
-						case HID_KEY_SPACE:
-							length += strlcpy(string + length, "Space", max_length - length);
-							break;
+						MAP_STRING_CHAR(PRINT_SCREEN, "Prnt");
+						MAP_STRING_CHAR(SCROLL_LOCK, "Scroll");
+
+						MAP_STRING_CHAR(PAUSE, "Pause");
+						MAP_STRING_CHAR(INSERT, "Insrt");
+						MAP_STRING_CHAR(HOME, "Home");
+						MAP_STRING_CHAR(PAGE_UP, "Pg Up");
+						MAP_STRING_CHAR(DELETE, "DEL");
+						MAP_STRING_CHAR(END, "End");
+						MAP_STRING_CHAR(PAGE_DOWN, "Pg Down");
+						MAP_STRING_CHAR(ARROW_RIGHT, "->");
+						MAP_STRING_CHAR(ARROW_LEFT, "<-");
+						MAP_STRING_CHAR(ARROW_DOWN, "v");
+						MAP_STRING_CHAR(ARROW_UP, "^");
+
+						MAP_STRING_CHAR(NUM_LOCK, "Nm Lck");
+						MAP_STRING_CHAR(KEYPAD_DIVIDE, "/");
+						MAP_SINGLE_CHAR(KEYPAD_MULTIPLY, '*');
+						MAP_SINGLE_CHAR(KEYPAD_SUBTRACT, '-');
+						MAP_SINGLE_CHAR(KEYPAD_ADD, '+');
+						MAP_STRING_CHAR(KEYPAD_ENTER, "Enter");
+						MAP_SINGLE_CHAR(KEYPAD_1, '1');
+						MAP_SINGLE_CHAR(KEYPAD_2, '2');
+						MAP_SINGLE_CHAR(KEYPAD_3, '3');
+						MAP_SINGLE_CHAR(KEYPAD_4, '4');
+						MAP_SINGLE_CHAR(KEYPAD_5, '5');
+						MAP_SINGLE_CHAR(KEYPAD_6, '6');
+						MAP_SINGLE_CHAR(KEYPAD_7, '7');
+						MAP_SINGLE_CHAR(KEYPAD_8, '8');
+						MAP_SINGLE_CHAR(KEYPAD_9, '9');
+						MAP_SINGLE_CHAR(KEYPAD_0, '0');
+						MAP_SINGLE_CHAR(KEYPAD_DECIMAL, '.');
+						MAP_SINGLE_CHAR(KEYPAD_EQUAL, '=');
+
+						MAP_STRING_CHAR(APPLICATION, "App");
+						MAP_STRING_CHAR(POWER, "Pwr");
+
+						MAP_STRING_CHAR(F13, "F13");
+						MAP_STRING_CHAR(F14, "F14");
+						MAP_STRING_CHAR(F15, "F15");
+						MAP_STRING_CHAR(F16, "F16");
+						MAP_STRING_CHAR(F17, "F17");
+						MAP_STRING_CHAR(F18, "F18");
+						MAP_STRING_CHAR(F19, "F19");
+						MAP_STRING_CHAR(F20, "F20");
+						MAP_STRING_CHAR(F21, "F21");
+						MAP_STRING_CHAR(F22, "F22");
+						MAP_STRING_CHAR(F23, "F23");
+						MAP_STRING_CHAR(F24, "F24");
+
+						MAP_SINGLE_CHAR(CURRENCY_UNIT , '$');
+						MAP_SINGLE_CHAR(KEYPAD_LEFT_PARENTHESIS , '(');
+						MAP_SINGLE_CHAR(KEYPAD_RIGHT_PARENTHESIS, ')');
+						MAP_SINGLE_CHAR(KEYPAD_LEFT_BRACE , '{');
+						MAP_SINGLE_CHAR(KEYPAD_RIGHT_BRACE, '}');
+						MAP_SINGLE_CHAR(KEYPAD_PERCENT, '%');
+						MAP_SINGLE_CHAR(KEYPAD_LESS_THAN, '<');
+						MAP_SINGLE_CHAR(KEYPAD_GREATER_THAN, '>');
+						MAP_SINGLE_CHAR(KEYPAD_AMPERSAND, '&');
+						MAP_SINGLE_CHAR(KEYPAD_VERTICAL_BAR, '|');
+
+						MAP_SINGLE_CHAR(KEYPAD_COLON, ':');
+						MAP_SINGLE_CHAR(KEYPAD_HASH, '#');
+						MAP_SINGLE_CHAR(KEYPAD_AT, '@');
+						MAP_SINGLE_CHAR(KEYPAD_EXCLAMATION, '!');
 
 						default:
 							break;
 					}
 
+#undef MAP_STRING_CHAR
 #undef MAP_SINGLE_CHAR
+#undef MAP_DIRECT_CHAR
 
 					if(length == 0)
 					{
@@ -617,6 +715,7 @@ void application::draw_active_keymap()
 					break;
 			}
 
+			string[length] = '\0';
 			draw_string(&m_display, string,  foreground, off_x, off_y  + ((height - font_height) / 2), width, text_justification_t::center);
 		}
 	}
