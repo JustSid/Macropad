@@ -680,13 +680,6 @@ void application::draw_active_keymap()
 #undef MAP_SINGLE_CHAR
 #undef MAP_DIRECT_CHAR
 
-					if(length == 0)
-					{
-						string[length ++] = 'N';
-						string[length ++] = '/';
-						string[length ++] = 'A';
-					}
-
 					break;
 				}
 				case keymacro_t::type_t::action:
@@ -715,8 +708,11 @@ void application::draw_active_keymap()
 					break;
 			}
 
-			string[length] = '\0';
-			draw_string(&m_display, string,  foreground, off_x, off_y  + ((height - font_height) / 2), width, text_justification_t::center);
+			if(length > 0)
+			{
+				string[length] = '\0';
+				draw_string(&m_display, string,  foreground, off_x, off_y  + ((height - font_height) / 2), width, text_justification_t::center);
+			}
 		}
 	}
 }
